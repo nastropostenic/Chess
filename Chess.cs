@@ -2,6 +2,7 @@
 using Microsoft.Xna.Framework.Graphics;
 using Microsoft.Xna.Framework.Input;
 using SharpDX.DirectWrite;
+using System;
 using System.Collections.Generic;
 using System.Diagnostics;
 using System.Runtime.InteropServices.Marshalling;
@@ -24,6 +25,11 @@ namespace Chess
 
         */
 
+        public static List<Square> Squares = new List<Square>();
+
+        public static List<Piece> OnBoardPieces = new List<Piece>();
+        public static List<Piece> CapturedPieces = new List<Piece>();
+
         public enum Colours
         {
             White = 1,
@@ -43,8 +49,6 @@ namespace Chess
             }
         }
 
-        public static List<Square> Squares = new List<Square>();
-
         public abstract class Piece
         {
             public Square _OccupiedSquare;
@@ -52,17 +56,28 @@ namespace Chess
 
             public List<Square> CapturableSquares = new List<Square>();
 
+            public Piece(Square occupiedSquare, Colours colour)
+            {
+                OnBoardPieces.Add(this);
+                _OccupiedSquare = occupiedSquare;
+                _Colour = colour;
+            }
+
             public void Capture(Square square)
             {
                 bool canCapture = false;
                 foreach (Square capturableSquare in CapturableSquares)
-                {
                     if (capturableSquare.Equals(square))
                         canCapture = true;
-                }
 
                 if (!canCapture)
                     return;
+
+                if (square.OccupiedBy != null)
+                {
+                    OnBoardPieces.Remove(square.OccupiedBy);
+                    CapturedPieces.Add(square.OccupiedBy);
+                }
 
                 this._OccupiedSquare = square;
                 square.OccupiedBy = this;
@@ -71,26 +86,15 @@ namespace Chess
 
         public class Pawn : Piece
         {
-            public Pawn(Square occupiedSquare, Colours colour)
-            {
-                _OccupiedSquare = occupiedSquare;
-                _Colour = colour;
-            }
+            public Pawn(Square occupiedSquare, Colours colour) : base(occupiedSquare, colour) {}
 
             public void CheckCapturableSquares()
             {
                 foreach (Square square in Squares)
                 {
-                    if (square._Letter == _OccupiedSquare._Letter &&
-                        square._Number == _OccupiedSquare._Number + (int)_Colour &&
-                        square.OccupiedBy == null)
-                    {
-                        this.CapturableSquares.Add(square);
-                    }
-                    if ((square._Letter == _OccupiedSquare._Letter + 1 ||
-                        square._Letter == _OccupiedSquare._Letter - 1) &&
-                        square._Number == _OccupiedSquare._Number + (int)_Colour &&
-                        square.OccupiedBy != null)
+                    if ((square._Letter == _OccupiedSquare._Letter && square._Number == _OccupiedSquare._Number + (int)_Colour && square.OccupiedBy == null)
+                       ||
+                       (square._Letter == _OccupiedSquare._Letter + 1 || square._Letter == _OccupiedSquare._Letter - 1) && square._Number == _OccupiedSquare._Number + (int)_Colour && square.OccupiedBy != null)
                     {
                         this.CapturableSquares.Add(square);
                     }
@@ -113,12 +117,6 @@ namespace Chess
                 int number = (i % 8 + 1);
                 Square position = new Square(letter, number);
                 Squares.Add(position);
-            }
-
-            Debug.WriteLine(Squares.Count);
-            foreach (Square square in Squares)
-            {
-                Debug.WriteLine($"{square._Letter}{square._Number}");
             }
 
             base.Initialize();
