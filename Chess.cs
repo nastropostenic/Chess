@@ -14,6 +14,12 @@ namespace Chess
     {
         private GraphicsDeviceManager _graphics;
         private SpriteBatch _spriteBatch;
+        private Texture2D _background;
+        private Texture2D _whitePawn;
+        private Texture2D _blackPawn;
+
+        const int BackgroundWidth = 640;
+        const int BackgroundHeight = 640;
 
         /*
         Pawn - num+1 or if occupied letter+-1, num +1
@@ -36,16 +42,18 @@ namespace Chess
             Black = -1
         }
 
-        public struct Square
+        public class Square
         {
             public char _Letter;
             public int _Number;
+            public Vector2 _Position;
             public Piece OccupiedBy;
 
             public Square(char letter, int number)
             {
                 _Letter = letter;
                 _Number = number;
+                _Position = new Vector2(BackgroundWidth / 8 * ((int)_Letter - 65), BackgroundHeight - BackgroundHeight / 8 * _Number);
             }
         }
 
@@ -92,9 +100,9 @@ namespace Chess
             {
                 foreach (Square square in Squares)
                 {
-                    if ((square._Letter == _OccupiedSquare._Letter && square._Number == _OccupiedSquare._Number + (int)_Colour && square.OccupiedBy == null)
+                    if ((square._Letter == _OccupiedSquare._Letter && square._Number == _OccupiedSquare._Number + (int)_Colour && square.OccupiedBy == null) // move forward
                        ||
-                       (square._Letter == _OccupiedSquare._Letter + 1 || square._Letter == _OccupiedSquare._Letter - 1) && square._Number == _OccupiedSquare._Number + (int)_Colour && square.OccupiedBy != null)
+                       Math.Abs(square._Letter - _OccupiedSquare._Letter) == 1 && square._Number == _OccupiedSquare._Number + (int)_Colour && square.OccupiedBy != null) // move diagonal
                     {
                         this.CapturableSquares.Add(square);
                     }
@@ -111,12 +119,17 @@ namespace Chess
 
         protected override void Initialize()
         {
+            _graphics.PreferredBackBufferWidth = BackgroundWidth;
+            _graphics.PreferredBackBufferHeight = BackgroundHeight;
+            _graphics.ApplyChanges();
+
             for (int i = 0; i < 64; i++)
             {
                 char letter = (char)(i / 8 + 65);
                 int number = (i % 8 + 1);
-                Square position = new Square(letter, number);
-                Squares.Add(position);
+                Square notation = new Square(letter, number);
+                Squares.Add(notation);
+                Squares[i].OccupiedBy = new Pawn(Squares[i], Colours.White);
             }
 
             base.Initialize();
@@ -126,7 +139,9 @@ namespace Chess
         {
             _spriteBatch = new SpriteBatch(GraphicsDevice);
 
-            // TODO: use this.Content to load your game content here
+            _background = Content.Load<Texture2D>("background");
+            _whitePawn = Content.Load<Texture2D>("wpawn");
+            _blackPawn = Content.Load<Texture2D>("bpawn");
         }
 
         protected override void Update(GameTime gameTime)
@@ -141,7 +156,29 @@ namespace Chess
         {
             GraphicsDevice.Clear(Color.CornflowerBlue);
 
-            // TODO: Add your drawing code here
+            _spriteBatch.Begin();
+
+            _spriteBatch.Draw(
+                _background,
+                new Rectangle(0,0, BackgroundWidth, BackgroundHeight),
+                Color.White
+            );
+
+            foreach (Square square in Squares)
+            {
+                if (square.OccupiedBy != null)
+                {
+                    Debug.WriteLine(Convert.ToInt32(square._Position.X));
+                    Debug.WriteLine(Convert.ToInt32(square._Position.Y));
+                    _spriteBatch.Draw(
+                        _whitePawn,
+                        new Rectangle(Convert.ToInt32(square._Position.X), Convert.ToInt32(square._Position.Y), BackgroundWidth / 8, BackgroundHeight / 8),
+                        Color.White
+                    );
+                }
+            }
+
+            _spriteBatch.End();
 
             base.Draw(gameTime);
         }
