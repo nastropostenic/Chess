@@ -36,6 +36,10 @@ namespace Chess
         public static List<Piece> OnBoardPieces = new List<Piece>();
         public static List<Piece> CapturedPieces = new List<Piece>();
 
+        private MouseState _CurrentMouseState;
+        private MouseState _PreviousMouseState;
+
+
         public enum Colours
         {
             White = 1,
@@ -129,7 +133,14 @@ namespace Chess
                 int number = (i % 8 + 1);
                 Square notation = new Square(letter, number);
                 Squares.Add(notation);
-                Squares[i].OccupiedBy = new Pawn(Squares[i], Colours.White);
+            }
+
+            foreach (Square square in Squares)
+            {
+                if (square._Number == 2)
+                {
+                    square.OccupiedBy = new Pawn(square, Colours.White);
+                }
             }
 
             base.Initialize();
@@ -145,9 +156,23 @@ namespace Chess
         }
 
         protected override void Update(GameTime gameTime)
-        {
+        {   
             if (GamePad.GetState(PlayerIndex.One).Buttons.Back == ButtonState.Pressed || Keyboard.GetState().IsKeyDown(Keys.Escape))
                 Exit();
+
+            _PreviousMouseState = _CurrentMouseState;
+            _CurrentMouseState = Mouse.GetState();
+
+            foreach (Square square in Squares)
+            { 
+                if (new Rectangle(Convert.ToInt32(square._Position.X), Convert.ToInt32(square._Position.Y), BackgroundWidth / 8, BackgroundHeight / 8).Contains(_CurrentMouseState.Position))
+                {
+                    if (_CurrentMouseState.LeftButton == ButtonState.Pressed && _PreviousMouseState.LeftButton == ButtonState.Released)
+                    {
+
+                    }
+                }
+            }
 
             base.Update(gameTime);
         }
@@ -168,8 +193,6 @@ namespace Chess
             {
                 if (square.OccupiedBy != null)
                 {
-                    Debug.WriteLine(Convert.ToInt32(square._Position.X));
-                    Debug.WriteLine(Convert.ToInt32(square._Position.Y));
                     _spriteBatch.Draw(
                         _whitePawn,
                         new Rectangle(Convert.ToInt32(square._Position.X), Convert.ToInt32(square._Position.Y), BackgroundWidth / 8, BackgroundHeight / 8),
