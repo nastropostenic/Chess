@@ -38,6 +38,7 @@ namespace Chess
 
         private MouseState _CurrentMouseState;
         private MouseState _PreviousMouseState;
+        private Square _SelectedSquare;
 
 
         public enum Colours
@@ -164,14 +165,19 @@ namespace Chess
             _CurrentMouseState = Mouse.GetState();
 
             foreach (Square square in Squares)
-            { 
-                if (new Rectangle(Convert.ToInt32(square._Position.X), Convert.ToInt32(square._Position.Y), BackgroundWidth / 8, BackgroundHeight / 8).Contains(_CurrentMouseState.Position))
-                {
-                    if (_CurrentMouseState.LeftButton == ButtonState.Pressed && _PreviousMouseState.LeftButton == ButtonState.Released)
-                    {
+            {
+                if (!(new Rectangle(Convert.ToInt32(square._Position.X), Convert.ToInt32(square._Position.Y), BackgroundWidth / 8, BackgroundHeight / 8).Contains(_CurrentMouseState.Position)))
+                    continue;
+                if (!(_CurrentMouseState.LeftButton == ButtonState.Pressed && _PreviousMouseState.LeftButton == ButtonState.Released))
+                    continue;
 
-                    }
+                if (!_SelectedSquare)
+                {
+                    _SelectedSquare = square;
+                    continue;
                 }
+
+                _SelectedSquare.OccupiedBy.CheckCapturableSquares();
             }
 
             base.Update(gameTime);
